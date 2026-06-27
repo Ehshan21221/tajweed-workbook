@@ -126,7 +126,7 @@ p{font-size:10.5px;line-height:1.5;margin-bottom:6px;}
 <!-- Print Bar -->
 <div class="print-bar">
   <span class="bar-title">🌙 Noor Ul-Ilm Academy — Tajweed Workbook</span>
-  <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+  <button class="print-btn" id="dlBtn" onclick="downloadPDF()">⬇️ Download PDF</button>
 </div>
 
 <!-- ══════════ COVER ══════════ -->
@@ -1052,6 +1052,40 @@ p{font-size:10.5px;line-height:1.5;margin-bottom:6px;}
     </div>
   </div>
 </div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+async function downloadPDF(){
+  const btn=document.getElementById('dlBtn');
+  btn.textContent='⏳ Generating…';btn.disabled=true;
+  try{
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const pages=document.querySelectorAll('.page');
+    for(let i=0;i<pages.length;i++){
+      btn.textContent=`⏳ Page ${i+1}/${pages.length}…`;
+      const canvas=await html2canvas(pages[i],{scale:1.5,useCORS:true,backgroundColor:'#ffffff',logging:false});
+      const img=canvas.toDataURL('image/jpeg',0.85);
+      const w=210,h=297,iH=(canvas.height*w)/canvas.width;
+      if(i>0)pdf.addPage();
+      if(iH<=h){pdf.addImage(img,'JPEG',0,0,w,iH);}
+      else{
+        let y=0;const sl=h*(canvas.width/w);
+        while(y<canvas.height){
+          const sc=document.createElement('canvas');
+          sc.width=canvas.width;sc.height=Math.min(sl,canvas.height-y);
+          sc.getContext('2d').drawImage(canvas,0,y,canvas.width,sc.height,0,0,canvas.width,sc.height);
+          if(y>0)pdf.addPage();
+          pdf.addImage(sc.toDataURL('image/jpeg',0.85),'JPEG',0,0,w,(sc.height*w)/canvas.width);
+          y+=sl;
+        }
+      }
+    }
+    pdf.save('NoorUlIlm_Tajweed_Workbook.pdf');
+    btn.textContent='✅ Done!';
+    setTimeout(()=>{btn.textContent='⬇️ Download PDF';btn.disabled=false;},3000);
+  }catch(e){btn.textContent='❌ Try again';btn.disabled=false;}
+}
+</script>
 </body>
 </html>
